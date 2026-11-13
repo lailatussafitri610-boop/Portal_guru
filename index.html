@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Rekap Guru - E-Learning Matematika</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+    .container { max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h2 { color: #333; margin-top: 0; }
+    input { width: 100%; padding: 12px; margin: 8px 0 16px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { background-color: #0066cc; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    button:hover { background-color: #0052a3; }
+    .btn-logout { background-color: #d9534f; float: right; padding: 8px 15px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #0066cc; color: white; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="login-box">
+    <h2>Login Portal Khusus Guru</h2>
+    <p>Silakan masuk menggunakan akun guru untuk melihat data kehadiran dan nilai siswa.</p>
+    <input type="email" id="email" placeholder="Email Guru" required>
+    <input type="password" id="password" placeholder="Kata Sandi" required>
+    <button id="btn-login" style="width: 100%;">Masuk</button>
+  </div>
+
+  <div class="container" id="rekap-box" style="display:none;">
+    <button id="btn-logout" class="btn-logout">Keluar</button>
+    <h2>Rekap Data Kehadiran & Nilai Siswa</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nama Siswa</th>
+          <th>Kelas</th>
+          <th>Keterangan / Nilai</th>
+          <th>Waktu Pengiriman</th>
+        </tr>
+      </thead>
+      <tbody id="tabel-data">
+        <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://gstatic.com";
+    import { getFirestore, collection, getDocs } from "https://gstatic.com";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB8U4cR9yu3UoU0rc6UjRU8iG2d3ZogG",
+      authDomain: "://firebaseapp.com",
+      projectId: "e-learning-matematika",
+      storageBucket: "e-learning-matematika.firebasestorage.app",
+      messagingSenderId: "748000078584",
+      appId: "1:748000078584:web:5617e49239cf4c7f6d100",
+      measurementId: "G-K011W8K6Y9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    document.getElementById("btn-login").addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        document.getElementById("login-box").style.display = "none";
+        document.getElementById("rekap-box").style.display = "block";
+        muatDataSiswa();
+      } catch (error) {
+        alert("Login gagal. Periksa kembali email dan kata sandi Anda.");
+      }
+    });
+
+    document.getElementById("btn-logout").addEventListener("click", async () => {
+      await signOut(auth);
+      location.reload();
+    });
+
+    async function muatDataSiswa() {
+      const querySnapshot = await getDocs(collection(db, "data_siswa"));
+      const tbody = document.getElementById("tabel-data");
+      tbody.innerHTML = "";
+
+      if (querySnapshot.empty) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada data siswa yang masuk.</td></tr>';
+        return;
+      }
+
+      querySnapshot.forEach((doc) => {
+        const d = doc.data();
+        const waktuFormat = d.waktu ? new Date(d.waktu).toLocaleString('id-ID') : "-";
+        tbody.innerHTML += `<tr>
+          <td>${d.nama || "-"}</td>
+          <td>${d.kelas || "-"}</td>
+          <td>${d.status || "-"}</td>
+          <td>${waktuFormat}</td>
+        </tr>`;
+      });
+    }
+  </script>
+</body>
+</html>
